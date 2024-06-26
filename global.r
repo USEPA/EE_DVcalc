@@ -44,6 +44,7 @@ o3.monitors <- aqs.list$o3.monitors
 o3.seasons <- aqs.list$o3.seasons
 pm.monitors <- aqs.list$pm.monitors
 pm.schedules <- aqs.list$pm.schedules
+pm.makeup.samples <- aqs.list$pm.makeup.samples
 o3.concurrences <- aqs.list$o3.concurrences
 pm.concurrences.hourly <- aqs.list$pm.concurrences.hourly
 pm.concurrences.daily <- aqs.list$pm.concurrences.daily

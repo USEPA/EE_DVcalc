@@ -110,23 +110,6 @@ get.seasons <- function(yr1,yr2) {
 }
 ```
 
-```{r label="get_schedules",echo=FALSE,message=FALSE,warning=FALSE}
-## Function to get PM2.5 site-level sample schedules for a range of years
-get.schedules <- function(yr1,yr2) {
-  schedules <- get.aqs.data(paste("SELECT DISTINCT
-    ss.state_code || ss.county_code || ss.site_id AS site,
-    TO_CHAR(ss.sample_day+1/24,'YYYY-MM-DD') AS sample_date
-   FROM pm25_site_schedule ss
-  WHERE ss.parameter_code = '88101'
-    AND ss.pollutant_standard_id = '22'
-    AND ss.sample_day >= TO_DATE('",yr1,"-01-01','YYYY-MM-DD')
-    AND ss.sample_day <= TO_DATE('",yr2,"-12-31','YYYY-MM-DD')
-    AND ss.state_code NOT IN ('80','CC')
-  ORDER BY 1,2",sep=""))
-  return(schedules)
-}
-```
-
 ```{r label="get_monitors",echo=FALSE,message=FALSE,warning=FALSE}
 ## Function to retrieve monitor metadata from AQS
 ## par = Get monitors with this AQS parameter code
@@ -254,18 +237,19 @@ get.monitors <- function(par,yr1,yr2,all=FALSE) {
   WHERE agencies.agency_code = monitors.monitoring_agency
     AND methods.method_code = sm.methodology_code
     AND methods.parameter_code = sm.pa_parameter_code
-    AND methods.mo_id = monitors.mo_id
     AND mna.monitor_network_code = networks.monitor_network_code(+)
     AND monitors.mo_id = exclusions.mo_id(+)
+    AND monitors.mo_id = methods.mo_id(+)
     AND monitors.mo_id = mna.mo_id(+)
+    AND monitors.mo_id = mta.mo_mo_id(+)
+    AND monitors.mo_id = objectives.mo_mo_id(+)
     AND monitors.mo_id = pmp.mo_id(+)
     AND monitors.mo_id = rcf.mo_mo_id(+)
+    AND monitors.mo_id = sp.mo_mo_id(+)
     AND monitors.ms_measurement_scale = scales.measurement_scale(+)
     AND monitors.si_si_id = sites.si_id
-    AND mta.mo_mo_id = monitors.mo_id
-    AND mta.mt_monitor_type = types.monitor_type
-    AND objectives.mot_monitor_obj_type = mot.monitor_obj_type
-    AND objectives.mo_mo_id = monitors.mo_id
+    AND mta.mt_monitor_type = types.monitor_type(+)
+    AND objectives.mot_monitor_obj_type = mot.monitor_obj_type(+)
     AND rcf.cf_coll_freq_code = cf.coll_freq_code(+)
     AND regions.epa_region_code = states.epar_epa_region_code
     AND sites.county_code = cbsas.county_code(+)
@@ -274,7 +258,6 @@ get.monitors <- function(par,yr1,yr2,all=FALSE) {
     AND sites.state_code = cbsas.state_code(+)
     AND sites.state_code = counties.stt_state_code
     AND sites.state_code = states.state_code
-    AND sp.mo_mo_id = monitors.mo_id
     AND stz.si_id = sites.si_id
     AND tz.time_zone_name = stz.time_zone_name
     AND combos.parameter_code(+) = '",par,"'
@@ -282,25 +265,25 @@ get.monitors <- function(par,yr1,yr2,all=FALSE) {
     AND EXTRACT(YEAR FROM combos.cutover_date(+)) <= '",yr2,"'
     AND COALESCE(EXTRACT(YEAR FROM exclusions.begin_date(+)),",yr1,") <= '",yr2,"'
     AND COALESCE(EXTRACT(YEAR FROM exclusions.end_date(+)),",yr2,") >= '",yr1,"'
-    AND COALESCE(EXTRACT(YEAR FROM methods.begin_date),",yr1,") <= '",yr2,"'
-    AND COALESCE(EXTRACT(YEAR FROM methods.end_date),",yr2,") >= '",yr1,"'
+    AND COALESCE(EXTRACT(YEAR FROM methods.begin_date(+)),",yr1,") <= '",yr2,"'
+    AND COALESCE(EXTRACT(YEAR FROM methods.end_date(+)),",yr2,") >= '",yr1,"'
     AND COALESCE(EXTRACT(YEAR FROM mna.begin_date(+)),",yr1,") <= '",yr2,"'
     AND COALESCE(EXTRACT(YEAR FROM mna.end_date(+)),",yr2,") >= '",yr1,"'
     AND COALESCE(EXTRACT(YEAR FROM monitors.last_sampling_date),",yr2,") >= '",yr1,"'
     AND monitors.last_sampling_date IS NOT NULL
     AND monitors.pa_parameter_code = '",par,"'
     AND monitors.status_ind = 'P'
-    AND COALESCE(EXTRACT(YEAR FROM mta.monitor_type_begin_date),",yr1,") <= '",yr2,"'
-    AND COALESCE(EXTRACT(YEAR FROM mta.monitor_type_end_date),",yr2,") >= '",yr1,"'
-    AND COALESCE(EXTRACT(YEAR FROM pmp.begin_date),",yr1,") <= '",yr2,"'
-    AND COALESCE(EXTRACT(YEAR FROM pmp.end_date),",yr2,") >= '",yr1,"'
+    AND COALESCE(EXTRACT(YEAR FROM mta.monitor_type_begin_date(+)),",yr1,") <= '",yr2,"'
+    AND COALESCE(EXTRACT(YEAR FROM mta.monitor_type_end_date(+)),",yr2,") >= '",yr1,"'
+    AND COALESCE(EXTRACT(YEAR FROM pmp.begin_date(+)),",yr1,") <= '",yr2,"'
+    AND COALESCE(EXTRACT(YEAR FROM pmp.end_date(+)),",yr2,") >= '",yr1,"'
     AND COALESCE(EXTRACT(YEAR FROM rcf.req_coll_freq_begin_date(+)),",yr1,") <= '",yr2,"'
     AND COALESCE(EXTRACT(YEAR FROM rcf.req_coll_freq_end_date(+)),",yr2,") >= '",yr1,"'
     AND sites.state_code NOT IN ('80','CC')
     AND sites.status_ind = 'P'
     AND sm.pa_parameter_code = '",par,"'
-    AND COALESCE(EXTRACT(YEAR FROM sp.sampling_begin_date),",yr1,") <= '",yr2,"'
-    AND COALESCE(EXTRACT(YEAR FROM sp.sampling_end_date),",yr2,") >= '",yr1,"'
+    AND COALESCE(EXTRACT(YEAR FROM sp.sampling_begin_date(+)),",yr1,") <= '",yr2,"'
+    AND COALESCE(EXTRACT(YEAR FROM sp.sampling_end_date(+)),",yr2,") >= '",yr1,"'
     AND sites.state_code = seasons.cn_stt_state_code(+)
     AND (sites.county_code = seasons.cn_county_code",
         ifelse(par == 44201," OR seasons.cn_county_code IS NULL)","(+))"),"
@@ -356,13 +339,13 @@ get.monitors <- function(par,yr1,yr2,all=FALSE) {
 
 ```{r label="retrieve_aqs_data",echo=FALSE,message=FALSE,warning=FALSE}
 ## Retrieve AQS data not available in API for Exceptional Event Design Value Tool
+library(plyr)
 curr.year <- as.numeric(substr(as.character(Sys.Date()),1,4)) - 
 ifelse(as.numeric(substr(as.character(Sys.Date()),6,7)) > 1,1,2)
 o3.methods <- get.methods(par=44201)
 o3.monitors <- get.monitors(par=44201,yr1=curr.year-4,yr2=curr.year,all=TRUE)
 o3.seasons <- get.seasons(yr1=curr.year-4,yr2=curr.year)
 pm.monitors <- get.monitors(par=88101,yr1=curr.year-4,yr2=curr.year,all=TRUE)
-pm.schedules <- get.schedules(yr1=curr.year-4,yr2=curr.year)
 
 ## Remove sites that are NAAQS excluded for the entire 5 years
 o3.monitors <- subset(o3.monitors,
@@ -373,6 +356,40 @@ pm.monitors <- subset(pm.monitors,
   as.Date(gsub(" ",paste(curr.year,"01-01",sep="-"),nonreg_begin_date)) >= as.Date(paste(curr.year-4,"01-01",sep="-")) &
   as.Date(gsub(" ",paste(curr.year,"01-01",sep="-"),nonreg_end_date)) <= as.Date(paste(curr.year,"12-31",sep="-")) &
   nonreg_concur != "Y")
+
+## Retrieve PM2.5 site-level sample schedules
+pm.schedules <- get.aqs.data(paste("SELECT DISTINCT
+  ss.state_code || ss.county_code || ss.site_id AS site,
+  TO_CHAR(ss.sample_day+1/24,'YYYY-MM-DD') AS sample_date
+ FROM pm25_site_schedule ss
+WHERE ss.parameter_code = '88101'
+  AND ss.pollutant_standard_id = '22'
+  AND ss.sample_day >= TO_DATE('",curr.year-4,"-01-01','YYYY-MM-DD')
+  AND ss.sample_day <= TO_DATE('",curr.year,"-12-31','YYYY-MM-DD')
+  AND ss.state_code NOT IN ('80','CC')
+ORDER BY 1,2",sep=""))
+
+## Retrieve PM2.5 makeup samples
+makeup.samples <- get.aqs.data(paste("SELECT DISTINCT
+  si.state_code || si.county_code || si.site_id AS site,
+  mo.poc AS poc,
+  TO_CHAR(ss.sample_day+1/24,'YYYY-MM-DD') AS sample_date,
+  ss.scheduled_day_flag AS sched_ind,
+  ss.creditable_day_flag AS cred_ind
+ FROM monitors mo,
+      pm25_scheduled_days ss,
+      site_basic si
+WHERE mo.si_si_id = si.si_id
+  AND ss.mo_id = mo.mo_id
+  AND si.state_code NOT IN ('80','CC')
+  AND ss.creditable_day_flag = 'M'
+  AND ss.pollutant_standard_id = '22'
+  AND ss.sample_day >= TO_DATE('",curr.year-4,"-01-01','YYYY-MM-DD')
+  AND ss.sample_day <= TO_DATE('",curr.year,"-12-31','YYYY-MM-DD')
+  AND ss.scheduled_day_flag = 'N'
+ORDER BY 1,2,3",sep=""))
+pm.makeup.samples <- ddply(makeup.samples,c("site","sample_date"),
+  summarize,sched_ind=sched_ind[1],cred_ind=cred_ind[1])
 
 ## Retrieve ozone hourly data regional concurrence flags
 dt.begin <- paste(curr.year-4,"01-01 00:00:00",sep="-")
@@ -433,12 +450,13 @@ pm.concurrences.daily <- get.aqs.data(paste("SELECT DISTINCT
 ```
 
 ```{r label="write_aqs_data",echo=FALSE,message=FALSE,warning=FALSE}
-aqs.list <- list(o3.methods=o3.methods,o3.monitors=o3.monitors,o3.seasons=o3.seasons,pm.monitors=pm.monitors,pm.schedules=pm.schedules,
-  o3.concurrences=o3.concurrences,pm.concurrences.hourly=pm.concurrences.hourly,pm.concurrences.daily=pm.concurrences.daily)
+aqs.list <- list(o3.methods=o3.methods,o3.monitors=o3.monitors,o3.seasons=o3.seasons,pm.monitors=pm.monitors,
+  pm.schedules=pm.schedules,pm.makeup.samples=pm.makeup.samples,o3.concurrences=o3.concurrences,
+  pm.concurrences.hourly=pm.concurrences.hourly,pm.concurrences.daily=pm.concurrences.daily)
 library(pins)
 board <- pins::board_connect()
 pin_write(board,x=aqs.list,name="EE_DVcalc_AQSdata",type="rds",title="AQS data for EE_DVcalc app",
-  description=paste("Last updated on",Sys.Date()),versioned=TRUE)
+  description=paste("Last updated on",Sys.Date()),versioned=FALSE)
 cat("Data updated successfully at",as.character(Sys.time()))
 ```
 

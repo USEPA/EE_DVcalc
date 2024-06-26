@@ -1,10 +1,22 @@
-EE_DVcalc: Exceptional Events Design Value Calculator
------------------------------------------------------
+# EE_DVcalc
+Exceptional Events Design Value Calculator
 
 R shiny application developed by Ben Wells, US EPA/OAQPS
+Latest Update: November 27, 2023
+--------------------------------------------------------
 
-Latest Update: February 27, 2024
-
-https://www.epa.gov/air-quality-analysis/exceptional-events-design-value-tool
-
-This tool allows state, local, and tribal air monitoring agencies to determine the regulatory significance (i.e. whether excluding concentrations affected by exceptional events will affect attainment of the NAAQS) of ozone and PM2.5 concentrations impacted by exceptional events by calculating the impact of excluding these concentrations on the design value, the statistic used to determine whether an ambient air quality monitoring site is meeting the NAAQS.
+Instructions for getting the app running locally
+1) Clone this Github repository to your local machine
+2) Make sure you have the latest version of R with the following packages installed: RAQSAPI, shiny, xlsx
+   - R can be downloaded for free from https://cran.r-project.org/
+   - To install packages, enter "install.packages(c("RAQSAPI","shiny","xlsx"))" in the R console window
+4) Register for access to the EPA's AQS API here: https://aqs.epa.gov/aqsweb/documents/data_api.html#signup
+5) In the downloaded repository, make the following changes in the file called 'global.r':
+   - On line 1, change "C:/Your/Local/Directory/" to the path to your cloned repository
+   - On line 5, change "Your.Name@epa.gov" to your email address and "Your_AQS_API_key" to your AQS API key
+     (you should receive your AQS API key by email when you sign up)
+6) In the R console window, enter the following commands:
+   - source("C:/Your/App/Directory/global.r") where /Your/App/Directory/ is the path to the app folder.
+   - runApp()
+7) The app should open in a new internet browser window
+   - Be sure to read the instructions on the opening screen before you start using the app!

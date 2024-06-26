@@ -72,9 +72,7 @@ shinyUI(fluidPage(title="Exceptional Events Design Value Tool",
          button at the top of the screen in Excel should enable the formulas."),
       p("Finally, clicking the 'Clear Selections' button will reset all current selections to their initial
          values. NOTE: It is strongly recommended that you click this button before selecting a new pollutant,
-         monitoring site, or design value period."),
-      p("For questions, comments, or to report a problem, please contact Ben Wells by phone at 919-541-7507
-         or by email at Wells.Benjamin@epa.gov.")),
+         monitoring site, or design value period.")),
     conditionalPanel(id="ozone-panel",
       condition="!output.getResetValue & input['poll.select'] == 'Ozone'",
       verbatimTextOutput(outputId="ozone.dvtext")),

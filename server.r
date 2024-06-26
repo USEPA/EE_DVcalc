@@ -10,8 +10,12 @@ shinyServer(function(input,output,session) {
   ## Get AQS monitor metadata based on pollutant selection
   get.monitors <- reactive({
     if (is.null(input$poll.select)) { return() }
+    if (is.null(input$year.select)) { return() }
     if (input$poll.select == "Ozone") { monitors <- o3.monitors }
     if (input$poll.select == "PM2.5") { monitors <- pm.monitors }
+    monitors <- subset(monitors,
+      as.Date(monitor_begin_date) <= as.Date(paste(substr(input$year.select,1,4),"12-31",sep="-")) &
+      as.Date(last_sample_date) >= as.Date(paste(substr(input$year.select,6,9),"01-01",sep="-")))
     return(monitors)
   })
   
@@ -50,7 +54,8 @@ shinyServer(function(input,output,session) {
       level <- ifelse(naaqs == "2015",70,ifelse(naaqs == "2008",75,84))
     }
     if (input$poll.select == "PM2.5") {
-      level <- ifelse(naaqs == "2024",9,ifelse(naaqs == "2012",12,ifelse(naaqs == "2006",35,15)))
+      level <- ifelse(naaqs == "2024",9,ifelse(naaqs == "2012",12,
+        ifelse(naaqs == "2006",35,15)))
     }
     return(level)
   })
@@ -189,7 +194,7 @@ shinyServer(function(input,output,session) {
       concur <- subset(o3.concurrences,substr(id,1,9) == aqs.site.id() & 
         as.integer(substr(dt,1,4)) %in% dv.years())
       if (nrow(concur) > 0) {
-        concur$poc <- substr(concur$id,10,10)
+        concur$poc <- substr(concur$id,10,11)
         concur$date <- as.Date(substr(concur$dt,1,10))
         concur$hour <- as.integer(substr(concur$dt,12,13))
         conc.ind <- match(paste(concur$poc,concur$date,concur$hour),
@@ -221,7 +226,7 @@ shinyServer(function(input,output,session) {
           bd <- as.Date(monitor.info$nonreg_begin_date[i])
           ed <- as.Date(ifelse(monitor.info$nonreg_end_date[i] == " ",as.character(Sys.Date()),
             monitor.info$nonreg_end_date[i]))
-          drop <- which(data$poc == substr(monitor.info$id[i],10,10) & 
+          drop <- which(data$poc == substr(monitor.info$id[i],10,11) & 
             data$date >= bd & data$date <= ed)
           if (length(drop) > 0) { data$conc[drop] <- NA }
         }
@@ -248,13 +253,13 @@ shinyServer(function(input,output,session) {
         site.data <- data.frame(date=data$date[1:n.dts],hour=data$hour[1:n.dts],conc=NA)
         for (j in 1:nrow(m)) {
           site.ind <- which(site.data$date >= m$bd[j] & site.data$date <= m$ed[j])
-          pri.ind <- which(data$poc == substr(m$id[j],10,10) &
+          pri.ind <- which(data$poc == substr(m$id[j],10,11) &
             data$date >= m$bd[j] & data$date <= m$ed[j])
           if (length(pri.ind) == 0) { next }
           site.data$conc[site.ind] <- data$conc[pri.ind]
           site.sub <- site.ind[which(is.na(site.data$conc[site.ind]))]
           if (length(site.sub)== 0) { next }
-          t <- subset(data,poc != substr(m$id[j],10,10) & date >= m$bd[j] & date <= m$ed[j])
+          t <- subset(data,poc != substr(m$id[j],10,11) & date >= m$bd[j] & date <= m$ed[j])
           vals <- floor(apply(matrix(t$conc,ncol=(npocs-1)),1,mean.na))
           site.data$conc[site.sub] <- vals[(site.sub-site.ind[1]+1)]
         }
@@ -287,7 +292,7 @@ shinyServer(function(input,output,session) {
       concur <- subset(pm.concurrences.daily,substr(id,1,9) == aqs.site.id() & 
         as.integer(substr(dt,1,4)) %in% dv.years())
       if (nrow(concur) > 0) {
-        concur$poc <- substr(concur$id,10,10)
+        concur$poc <- substr(concur$id,10,11)
         concur$date <- as.Date(substr(concur$dt,1,10))
         conc.ind <- match(paste(concur$poc,concur$date),paste(frm$poc,frm$date))
         frm$concur[conc.ind] <- "Y"
@@ -299,7 +304,7 @@ shinyServer(function(input,output,session) {
         concur <- subset(pm.concurrences.hourly,substr(id,1,9) == aqs.site.id() & 
           as.integer(substr(dt,1,4)) %in% dv.years())
         if (nrow(concur) > 0) {
-          concur$poc <- substr(concur$id,10,10)
+          concur$poc <- substr(concur$id,10,11)
           concur$date <- as.Date(substr(concur$dt,1,10))
           concur$hour <- as.integer(substr(concur$dt,12,13))
           conc.ind <- match(paste(concur$poc,concur$date,concur$hour),
@@ -339,7 +344,7 @@ shinyServer(function(input,output,session) {
           bd <- as.Date(monitor.info$nonreg_begin_date[i])
           ed <- as.Date(ifelse(monitor.info$nonreg_end_date[i] == " ",as.character(Sys.Date()),
             monitor.info$nonreg_end_date[i]))
-          drop <- which(data$poc == substr(monitor.info$id[i],10,10) &
+          drop <- which(data$poc == substr(monitor.info$id[i],10,11) &
             data$date >= bd & data$date <= ed)
           if (length(drop) > 0) { data$conc[drop] <- NA }
         }
@@ -362,13 +367,13 @@ shinyServer(function(input,output,session) {
         site.data <- data.frame(date=data$date[1:n.days],conc=NA)
         for (j in 1:nrow(m)) {
           site.ind <- which(site.data$date >= m$bd[j] & site.data$date <= m$ed[j])
-          pri.ind <- which(data$poc == substr(m$id[j],10,10) &
+          pri.ind <- which(data$poc == substr(m$id[j],10,11) &
             data$date >= m$bd[j] & data$date <= m$ed[j])
           if (length(pri.ind) == 0) { next }
           site.data$conc[site.ind] <- data$conc[pri.ind]
           site.sub <- site.ind[which(is.na(site.data$conc[site.ind]))]
           if (length(site.sub) == 0) { next }
-          t <- subset(data,poc != substr(m$id[j],10,10) & date >= m$bd[j] & date <= m$ed[j])
+          t <- subset(data,poc != substr(m$id[j],10,11) & date >= m$bd[j] & date <= m$ed[j])
           vals <- floor(10*apply(matrix(t$conc,ncol=(npocs-1)),1,mean.na))/10
           site.data$conc[site.sub] <- vals[(site.sub-site.ind[1]+1)]
         }
@@ -484,12 +489,21 @@ shinyServer(function(input,output,session) {
   ## Calculate PM2.5 DVs from daily data
   #######################################
   
-  ## Get PM2.5 creditable sample dates for selected site
+  ## Get PM2.5 scheduled sample dates for selected site
   sample.dates <- reactive({
     if (input$poll.select != "PM2.5") { return() }
     if (is.null(aqs.site.id())) { return() }
     if (is.null(dv.dates())) { return() }
     return(c(subset(pm.schedules,site == aqs.site.id() & 
+      sample_date %in% as.character(dv.dates()))$sample_date))
+  })
+  
+  ## Get PM2.5 makeup sample dates for selected site
+  makeup.samples <- reactive({
+    if (input$poll.select != "PM2.5") { return() }
+    if (is.null(aqs.site.id())) { return() }
+    if (is.null(dv.dates())) { return() }
+    return(c(subset(pm.makeup.samples,site == aqs.site.id() &
       sample_date %in% as.character(dv.dates()))$sample_date))
   })
   
@@ -499,15 +513,15 @@ shinyServer(function(input,output,session) {
     if (is.null(site.data())) { return() }
     isolate({ withProgress({
       level <- naaqs.level(); data <- site.data();
-      dates <- dv.dates(); cred <- sample.dates();
-      years <- as.numeric(substr(dates,1,4)); cred.years <- as.numeric(substr(cred,1,4));
-      months <- as.numeric(substr(dates,6,7)); cred.months <- as.numeric(substr(cred,6,7));
-      quarters <- (months-1) %/% 3 + 1; cred.quarters <- (cred.months-1) %/% 3 + 1
-      index <- intersect(which(!is.na(data$conc)),which(as.character(dates) %in% cred))
+      dates <- dv.dates(); sched <- sample.dates(); makeup <- makeup.samples();
+      years <- as.numeric(substr(dates,1,4)); sched.years <- as.numeric(substr(sched,1,4));
+      months <- as.numeric(substr(dates,6,7)); sched.months <- as.numeric(substr(sched,6,7));
+      quarters <- (months-1) %/% 3 + 1; sched.quarters <- (sched.months-1) %/% 3 + 1;
+      index <- intersect(which(!is.na(data$conc)),which(as.character(dates) %in% c(sched,makeup)))
       ## Calculate quarterly data capture
       qtr <- data.frame(year=rep(dv.years(),each=4),quarter=rep(1:4,times=3))
       qtr$obs <- c(table(quarters[index],years[index]))
-      qtr$req <- c(table(cred.quarters,cred.years))
+      qtr$req <- c(table(sched.quarters,sched.years))
       qtr$pct <- pmin(floor(100*qtr$obs/qtr$req+0.5),100)
       ## Remove concurred exceptional events, calculate quarterly means
       if (any(data$conc == -99,na.rm=TRUE)) { data$conc[which(data$conc == -99)] <- NA }
@@ -538,7 +552,7 @@ shinyServer(function(input,output,session) {
           concs <- data$conc
           for (i in 1:nrow(inv.qtrs)) {
             q <- inv.qtrs$quarter[i]; y <- inv.qtrs$year[i];
-            rep.ind <- which(years == y & quarters == q & as.character(dates) %in% cred & is.na(concs))
+            rep.ind <- which(years == y & quarters == q & as.character(dates) %in% sched & is.na(concs))
             N <- 11 - inv.qtrs$obs[i]
             concs[rep.ind][1:N] <- qtr.min[q]
           }
@@ -555,7 +569,7 @@ shinyServer(function(input,output,session) {
         inv.qtrs <- subset(qtr,pct < 75)
         for (i in 1:nrow(inv.qtrs)) {
           q <- inv.qtrs$quarter[i]; y <- inv.qtrs$year[i];
-          rep.ind <- which(years == y & quarters == q & as.character(dates) %in% cred & is.na(concs))
+          rep.ind <- which(years == y & quarters == q & as.character(dates) %in% sched & is.na(concs))
           if (length(rep.ind) > 0) { concs[rep.ind] <- qtr.max[q] }
         }
         test.qtr$mean <- c(tapply(concs,list(quarters,years),mean.na))
@@ -573,15 +587,15 @@ shinyServer(function(input,output,session) {
     if (is.null(site.data())) { return() }
     isolate({ withProgress({
       level <- naaqs.level(); data <- site.data();
-      dates <- dv.dates(); cred <- sample.dates();
-      years <- as.numeric(substr(dates,1,4)); cred.years <- as.numeric(substr(cred,1,4));
-      months <- as.numeric(substr(dates,6,7)); cred.months <- as.numeric(substr(cred,6,7));
-      quarters <- (months-1) %/% 3 + 1; cred.quarters <- (cred.months-1) %/% 3 + 1
-      index <- intersect(which(!is.na(data$conc)),which(as.character(dates) %in% cred))
+      dates <- dv.dates(); sched <- sample.dates(); makeup <- makeup.samples();
+      years <- as.numeric(substr(dates,1,4)); sched.years <- as.numeric(substr(sched,1,4));
+      months <- as.numeric(substr(dates,6,7)); sched.months <- as.numeric(substr(sched,6,7));
+      quarters <- (months-1) %/% 3 + 1; sched.quarters <- (sched.months-1) %/% 3 + 1;
+      index <- intersect(which(!is.na(data$conc)),which(as.character(dates) %in% c(sched,makeup)))
       ## Calculate quarterly data capture
       qtr <- data.frame(year=rep(dv.years(),each=4),quarter=rep(1:4,times=3))
       qtr$obs <- c(table(quarters[index],years[index]))
-      qtr$req <- c(table(cred.quarters,cred.years))
+      qtr$req <- c(table(sched.quarters,sched.years))
       qtr$pct <- pmin(floor(100*qtr$obs/qtr$req+0.5),100)
       ## Calculate annual data capture
       ann <- data.frame(year=dv.years(),matrix(NA,nrow=3,ncol=25))
@@ -616,7 +630,7 @@ shinyServer(function(input,output,session) {
         inv.qtrs <- subset(qtr,pct < 75)
         for (i in 1:nrow(inv.qtrs)) {
           q <- inv.qtrs$quarter[i]; y <- inv.qtrs$year[i];
-          rep.ind <- which(years == y & quarters == q & as.character(dates) %in% cred & is.na(concs))
+          rep.ind <- which(years == y & quarters == q & as.character(dates) %in% sched & is.na(concs))
           if (length(rep.ind) > 0) { concs[rep.ind] <- qtr.max[q] }
         }
         for (i in 1:3) {
@@ -857,7 +871,7 @@ shinyServer(function(input,output,session) {
   ################################################################
   
   ## Trigger to prevent download button from displaying before data retrieval finishes
-  output$showLink <- reactive({ 
+  output$showLink <- reactive({
     if (vals$reset) { return(FALSE) }
     return(ifelse(is.null(site.data()),FALSE,TRUE)) 
   })
@@ -885,7 +899,7 @@ shinyServer(function(input,output,session) {
         colNames=FALSE,rowNames=FALSE,na.string="")
       saveWorkbook(wb,file)
       invisible(NULL)
-    })
+  })
   
   ## Download PM2.5 DV data to Excel spreadsheet
   output$download.pm25 <- downloadHandler(
@@ -915,4 +929,3 @@ shinyServer(function(input,output,session) {
       invisible(NULL)
   })
 })
-
