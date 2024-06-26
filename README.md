@@ -2,7 +2,7 @@
 
 R shiny application developed by Ben Wells, US EPA/OAQPS
 
-Latest Update: February 27, 2024
+Latest Update: June 26, 2024
 
 https://www.epa.gov/air-quality-analysis/exceptional-events-design-value-tool
 
