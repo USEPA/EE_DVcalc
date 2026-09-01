@@ -21,7 +21,7 @@ avg8 <- function(x,sub,lvl) {
   if (n >= 6) { return(mean(x,na.rm=TRUE)) }
   if (n > 0 & n < 6) {
     x.sub <- mean(replace(x,which(is.na(x)),sub))
-    return(ifelse(floor(x.sub) > lvl,x.sub,NA))
+    return(ifelse(floor(x.sub) > lvl,mean(x,na.rm=TRUE),NA))
   }
 }
 
@@ -29,10 +29,10 @@ avg8 <- function(x,sub,lvl) {
 avg24 <- function(x,sub,lvl) {
   n <- count(x)
   if (n == 0) { return(NA) }
-  if (n >= 18) { return(floor(10*mean(x,na.rm=TRUE))/10) }
+  if (n >= 18) { return(trunc(10*mean(x,na.rm=TRUE))/10) }
   if (n > 0 & n < 18) {
-    x.sub <- floor(10*mean(replace(x,which(is.na(x)),sub)))/10
-    return(ifelse(round(x.sub) > lvl,x.sub,NA))
+    x.sub <- trunc(10*mean(replace(x,which(is.na(x)),sub)))/10
+    return(ifelse(round(x.sub) > lvl,mean(x,na.rm=TRUE),NA))
   }
 }
 

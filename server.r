@@ -14,8 +14,8 @@ shinyServer(function(input,output,session) {
     if (input$poll.select == "Ozone") { monitors <- o3.monitors }
     if (input$poll.select == "PM2.5") { monitors <- pm.monitors }
     monitors <- subset(monitors,
-      as.Date(monitor_begin_date) <= as.Date(paste(substr(input$year.select,1,4),"12-31",sep="-")) &
-      as.Date(last_sample_date) >= as.Date(paste(substr(input$year.select,6,9),"01-01",sep="-")))
+      as.Date(monitor_begin_date) <= as.Date(paste(substr(input$year.select,6,9),"12-31",sep="-")) &
+      as.Date(last_sample_date) >= as.Date(paste(substr(input$year.select,1,4),"01-01",sep="-")))
     return(monitors)
   })
   
@@ -276,6 +276,8 @@ shinyServer(function(input,output,session) {
       api.data <- as.data.frame(aqs_sampledata_by_site(parameter="88101",
         bdate=dates[1],edate=dates[length(dates)],stateFIPS=input$state.select,
         countycode=input$county.select,sitenum=input$site.select))
+      api.data <- subset(api.data,paste(state_code,county_code,site_number,poc,sep="") %in%
+        unique(monitor.info$id))
     },message="Retrieving data from AQS...",value=NULL,detail=NULL)
     withProgress({
       temp <- data.frame(poc=api.data$poc,
@@ -339,12 +341,14 @@ shinyServer(function(input,output,session) {
       if (length(ee) > 0) { data$conc[ee] <- -99 }
       ## Remove data with concurred NAAQS exclusions
       if (any(monitor.info$nonreg_concur == "Y")) {
-        nonreg <- which(monitor.info$nonreg_concur == "Y")
-        for (i in nonreg) {
-          bd <- as.Date(monitor.info$nonreg_begin_date[i])
-          ed <- as.Date(ifelse(monitor.info$nonreg_end_date[i] == " ",as.character(Sys.Date()),
-            monitor.info$nonreg_end_date[i]))
-          drop <- which(data$poc == substr(monitor.info$id[i],10,11) &
+        nonreg <- subset(monitor.info,nonreg_concur == "Y",c("id",
+          "nonreg_begin_date","nonreg_end_date","nonreg_concur"))
+        nr <- nonreg[which(!duplicated(nonreg)),]
+        for (i in 1:nrow(nr)) {
+          bd <- as.Date(nr$nonreg_begin_date[i])
+          ed <- as.Date(ifelse(nr$nonreg_end_date[i] == " ",as.character(Sys.Date()),
+            nr$nonreg_end_date[i]))
+          drop <- which(data$poc == substr(nr$id[i],10,11) &
             data$date >= bd & data$date <= ed)
           if (length(drop) > 0) { data$conc[drop] <- NA }
         }
@@ -519,10 +523,19 @@ shinyServer(function(input,output,session) {
       quarters <- (months-1) %/% 3 + 1; sched.quarters <- (sched.months-1) %/% 3 + 1;
       index <- intersect(which(!is.na(data$conc)),which(as.character(dates) %in% c(sched,makeup)))
       ## Calculate quarterly data capture
-      qtr <- data.frame(year=rep(dv.years(),each=4),quarter=rep(1:4,times=3))
-      qtr$obs <- c(table(quarters[index],years[index]))
-      qtr$req <- c(table(sched.quarters,sched.years))
-      qtr$pct <- pmin(floor(100*qtr$obs/qtr$req+0.5),100)
+      q <- data.frame(year=rep(dv.years(),each=4),quarter=rep(1:4,times=3))
+      obs <- table(quarters[index],years[index])
+      obs.df <- data.frame(year=rep(as.numeric(colnames(obs)),each=nrow(obs)),
+        quarter=rep(as.numeric(rownames(obs)),times=ncol(obs)),obs=c(obs))
+      q2 <- merge(q,obs.df,all=TRUE)
+      req <- table(sched.quarters,sched.years)
+      req.df <- data.frame(year=rep(as.numeric(colnames(req)),each=nrow(req)),
+        quarter=rep(as.numeric(rownames(req)),times=ncol(req)),req=c(req))
+      qtr <- merge(q2,req.df,all=TRUE)
+      qtr$obs <- replace(qtr$obs,which(is.na(qtr$obs)),0)
+      qtr$req <- replace(qtr$req,which(is.na(qtr$req)),0)
+      qtr$pct <- mapply(function(obs,req) ifelse(req == 0,0,
+        pmin(floor(100*obs/req+0.5),100)),obs=qtr$obs,req=qtr$req)
       ## Remove concurred exceptional events, calculate quarterly means
       if (any(data$conc == -99,na.rm=TRUE)) { data$conc[which(data$conc == -99)] <- NA }
       qtr$mean <- c(tapply(data$conc,list(quarters,years),mean.na))
@@ -534,12 +547,12 @@ shinyServer(function(input,output,session) {
         min.qtr.obs=tapply(qtr$obs,list(qtr$year),min))
       ann$valid <- sapply(ann$complete.qtrs,function(x) x == 4)
       ## Calculate design value, test for validity
-      dv <- list(dv=floor(10*mean(ann$mean)+0.5)/10,valid=all(ann$valid))
+      dv <- list(dv=floor(10*mean.na(ann$mean)+0.5)/10,valid=all(ann$valid))
       if (!is.na(dv$dv) & !dv$valid) {
         ## If annual mean or DV > NAAQS level, check for >= 11 obs in each quarter
         inv <- which(!ann$valid)
         check1 <- ann$min.qtr.obs >= 11
-        check2 <- ann$mean > level
+        check2 <- sapply(ann$mean,function(x) ifelse(is.na(x),FALSE,x > level))
         check3 <- !is.na(dv$dv) & dv$dv > level
         ann$valid[inv] <- check1[inv] & (check2[inv] | check3)
         dv$valid <- all(ann$valid)
@@ -558,6 +571,7 @@ shinyServer(function(input,output,session) {
           }
           test.qtr$mean <- c(tapply(concs,list(quarters,years),mean.na))
           test.ann$mean <- tapply(test.qtr$mean,list(test.qtr$year),mean.na)
+          test.ann$mean <- replace(test.ann$mean,which(is.na(test.ann$mean)),0)
           test.dv <- floor(10*mean(test.ann$mean)+0.5)/10
           if (test.dv > level) { dv$valid <- TRUE }  
         }
@@ -593,15 +607,27 @@ shinyServer(function(input,output,session) {
       quarters <- (months-1) %/% 3 + 1; sched.quarters <- (sched.months-1) %/% 3 + 1;
       index <- intersect(which(!is.na(data$conc)),which(as.character(dates) %in% c(sched,makeup)))
       ## Calculate quarterly data capture
-      qtr <- data.frame(year=rep(dv.years(),each=4),quarter=rep(1:4,times=3))
-      qtr$obs <- c(table(quarters[index],years[index]))
-      qtr$req <- c(table(sched.quarters,sched.years))
-      qtr$pct <- pmin(floor(100*qtr$obs/qtr$req+0.5),100)
+      q <- data.frame(year=rep(dv.years(),each=4),quarter=rep(1:4,times=3))
+      obs <- table(quarters[index],years[index])
+      obs.df <- data.frame(year=rep(as.numeric(colnames(obs)),each=nrow(obs)),
+        quarter=rep(as.numeric(rownames(obs)),times=ncol(obs)),obs=c(obs))
+      q2 <- merge(q,obs.df,all=TRUE)
+      req <- table(sched.quarters,sched.years)
+      req.df <- data.frame(year=rep(as.numeric(colnames(req)),each=nrow(req)),
+        quarter=rep(as.numeric(rownames(req)),times=ncol(req)),req=c(req))
+      qtr <- merge(q2,req.df,all=TRUE)
+      qtr$obs <- replace(qtr$obs,which(is.na(qtr$obs)),0)
+      qtr$req <- replace(qtr$req,which(is.na(qtr$req)),0)
+      qtr$pct <- mapply(function(obs,req) ifelse(req == 0,0,
+        pmin(floor(100*obs/req+0.5),100)),obs=qtr$obs,req=qtr$req)
       ## Calculate annual data capture
       ann <- data.frame(year=dv.years(),matrix(NA,nrow=3,ncol=25))
       colnames(ann)[2:26] <- c("obs","Nmax","p98","complete.qtrs","valid",
         paste(rep(c("max","date"),each=10),rep(c(1:10),times=2),sep=""))
-      ann$obs <- c(table(years[index])); ann$Nmax <- ann$obs %/% 50 + 1;
+      obs <- table(years[index])
+      ann$obs <- c(obs[match(ann$year,as.numeric(rownames(obs)))])
+      ann$obs <- replace(ann$obs,which(is.na(ann$obs)),0)
+      ann$Nmax <- ann$obs %/% 50 + 1
       ann$complete.qtrs <- tapply(qtr$pct,list(qtr$year),function(x) sum(x >= 75))
       ann$valid <- sapply(ann$complete.qtrs,function(x) x == 4)
       ## Remove concurred exceptional events, calculate annual 98th percentiles
@@ -621,7 +647,7 @@ shinyServer(function(input,output,session) {
         }
       }
       ## Calculate design value and test for validity
-      dv <- list(dv=floor(mean(ann$p98)+0.5),valid=all(ann$valid))
+      dv <- list(dv=floor(mean.na(ann$p98)+0.5),valid=all(ann$valid))
       if (all(ann$obs > 0) & dv$dv > level) { dv$valid <- TRUE }
       ## Apply substitution test if all quarters >= 50% complete
       if (!is.na(dv$dv) & !dv$valid & all(qtr$pct >= 50)) {
