@@ -24,6 +24,7 @@ This repository contains the source code and other files for the EE_DVcalc R shi
 2) You will need an AQS API key. Instructions on how to register for an API key are here: https://aqs.epa.gov/aqsweb/documents/data_api.html#signup
 3) Insert your API username and key into the global.r script by replacing the username and key arguments in the aqs_credentials function. You can also create local environment variables to pass in these arguments if desired.
 4) Point to your local copy of aqsdata.Rdata by replacing the last code chunk starting with "## Load monitor metadata, ..." with a single line loading your local copy of aqsdata.Rdata.
+5) Run the shiny application in R or RStudio.
 
 # Contact
 Ben Wells (Wells.Benjamin@epa.gov)
