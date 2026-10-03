@@ -208,6 +208,9 @@ shinyServer(function(input,output,session) {
       data <- merge(all.hrs,temp,by=c("poc","date","hour"),all.x=TRUE,all.y=FALSE,sort=FALSE)
       data <- data[order(data$poc,data$date,data$hour),]
       ## Remove missing days assumed less than the standard
+      ## -99 marks excluded observations separately from ordinary missing data.
+      ## Later calculations count these observations before removing them
+      ## from concentration summaries; user-selected exclusions use it too.
       bg <- which(data$flag == "BG" & data$concur == "Y")
       if (length(bg) > 0) { data$conc[bg] <- -99 }
       ## Remove concurred exceptional events
@@ -240,6 +243,8 @@ shinyServer(function(input,output,session) {
         site.data <- subset(data,poc == min(data$poc),c("date","hour","conc","flag","concur"))
       }
       ## 2015 O3 NAAQS: Combine POCs at sites with multiple monitors
+      ## Use the primary POC for each metadata-defined date interval; fill its
+      ## missing hours with the mean of the other POCs, floored to whole ppb.
       if (naaqs.level() == 70 & npocs > 1) {
         m <- subset(monitor.info,primary_begin_date != " ",
           c("id","primary_begin_date","primary_end_date"))
@@ -557,6 +562,11 @@ shinyServer(function(input,output,session) {
         ann$valid[inv] <- check1[inv] & (check2[inv] | check3)
         dv$valid <- all(ann$valid)
         ## Substitution test 1: sites with DV > NAAQS level
+        ## Substitutions use minima for the same calendar quarter across the
+        ## three-year period. They affect the validity test, not the reported DV.
+        ## Plain language test description:
+        ## Would the result still exceed the standard if missing samples
+        ## needed to reach 11 observations per quarter were filled with lows?
         qtr.obs <- tapply(qtr$obs,list(qtr$quarter),sum)
         if (dv$dv > level & min(qtr$obs) < 11 & all(qtr.obs > 30)) {
           qtr.min <- tapply(data$conc,list(quarters),min.na)
@@ -577,6 +587,12 @@ shinyServer(function(input,output,session) {
         }
       }
       ## Substitution test 2: sites with DV <= NAAQS level, all quarters >= 50% complete
+      ## Fill missing scheduled samples in incomplete quarters with the
+      ## three-year calendar-quarter maxima to test validity conservatively.
+      ## The reported DV retains the original, unsubstituted concentrations.
+      ## Plain language test description:
+      ## Would the result still be at or below the standard if missing
+      ## scheduled samples in incomplete quarters were filled with highs?
       if (!is.na(dv$dv) & !dv$valid & all(qtr$pct >= 50)) {
         test.qtr <- qtr; test.ann <- ann; concs <- data$conc;
         qtr.max <- tapply(data$conc,list(quarters),max.na)
@@ -650,6 +666,13 @@ shinyServer(function(input,output,session) {
       dv <- list(dv=floor(mean.na(ann$p98)+0.5),valid=all(ann$valid))
       if (all(ann$obs > 0) & dv$dv > level) { dv$valid <- TRUE }
       ## Apply substitution test if all quarters >= 50% complete
+      ## This test changes validity only. Its strict comparison (< level)
+      ## differs from the annual test (<= level); preserve that distinction
+      ## unless a domain review supports changing the boundary.
+      ## Plain language test description:
+      ## Would the result still be below the standard if missing scheduled
+      ## samples in incomplete quarters were filled with highs from the same
+      ## calendar quarter across all three years?
       if (!is.na(dv$dv) & !dv$valid & all(qtr$pct >= 50)) {
         test <- ann[,c(1:4)]; concs <- data$conc;
         qtr.max <- tapply(data$conc,list(quarters),max.na)

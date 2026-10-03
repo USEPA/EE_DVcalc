@@ -1,0 +1,5 @@
+# Local review drafts and other private working files
+/local_files/
+
+# Local credentials
+.Renviron
