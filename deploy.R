@@ -15,23 +15,20 @@ get_git_value <- function(args) {
 
 current_branch <- get_git_value(c("rev-parse", "--abbrev-ref", "HEAD"))
 current_commit <- substr(get_git_value(c("rev-parse", "HEAD")), 1, 7)
-is_public_deployment <- identical(current_branch, "main")
 
-connect_server_url <- trimws(Sys.getenv("CONNECT_SERVER"))
-connect_account <- trimws(Sys.getenv("CONNECT_ACCOUNT"))
+connect_server_url <- trimws(Sys.getenv("CONNECT_STAGING_SERVER"))
+if (!nzchar(connect_server_url)) {
+  stop("Set CONNECT_STAGING_SERVER to the staging Posit Connect URL.")
+}
+connect_account <- trimws(Sys.getenv("CONNECT_STAGING_ACCOUNT"))
 if (!nzchar(connect_account)) {
   connect_account <- "dmap"
 }
-connect_api_key <- Sys.getenv("CONNECT_API_KEY")
-connect_server_name <- "ee_dvcalc"
+connect_api_key <- Sys.getenv("CONNECT_STAGING_API_KEY")
+connect_server_name <- "ee_dvcalc_staging"
 
-if (nzchar(connect_server_url)) {
-  rsconnect::addServer(url = connect_server_url, name = connect_server_name)
-}
+rsconnect::addServer(url = connect_server_url, name = connect_server_name)
 if (nzchar(connect_api_key)) {
-  if (!nzchar(connect_server_url)) {
-    stop("Set CONNECT_SERVER when using CONNECT_API_KEY.")
-  }
   rsconnect::connectApiUser(
     account = connect_account,
     server = connect_server_name,
@@ -65,14 +62,12 @@ copy_app_files(app_dir, deployment_dir)
 
 global_file <- file.path(deployment_dir, "global.R")
 global_lines <- readLines(global_file, warn = FALSE)
-data_source_line <- grep("^public\\.server\\s*<-\\s*TRUE\\s*$", global_lines)
+data_source_line <- grep("^public\\.server\\s*<-\\s*(TRUE|FALSE)\\s*$", global_lines)
 if (length(data_source_line) != 1) {
-  stop("Expected exactly one `public.server <- TRUE` setting in global.R.")
+  stop("Expected exactly one `public.server` TRUE/FALSE setting in global.R.")
 }
-if (!is_public_deployment) {
-  global_lines[data_source_line] <- "public.server <- FALSE"
-  writeLines(global_lines, global_file)
-}
+global_lines[data_source_line] <- "public.server <- FALSE"
+writeLines(global_lines, global_file)
 
 deployed_at <- format(Sys.time(), "%Y-%m-%d %H:%M")
 writeLines(c(
@@ -81,23 +76,21 @@ writeLines(c(
   paste0("deployed: ", deployed_at)
 ), file.path(deployment_dir, "git_info.txt"))
 
-app_name <- if (is_public_deployment) {
-  "ee_dvcalc"
-} else {
-  paste0("ee_dvcalc_", gsub("[^A-Za-z0-9_-]", "_", current_branch))
-}
+app_name <- paste0(
+  "ee_dvcalc_staging_",
+  gsub("[^A-Za-z0-9_-]", "_", current_branch)
+)
 
 message(
   "Deploying ", app_name, " with ",
-  if (is_public_deployment) "pins-board" else "local Rdata",
-  " data."
+  "local Rdata data to the staging Connect server."
 )
 
 rsconnect::deployApp(
   appDir = deployment_dir,
   appName = app_name,
   account = connect_account,
-  server = if (nzchar(connect_server_url)) connect_server_name else NULL,
+  server = connect_server_name,
   launch.browser = FALSE,
   forceUpdate = TRUE
 )

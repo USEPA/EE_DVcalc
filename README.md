@@ -18,7 +18,7 @@ This repository contains the source code and other files for the EE_DVcalc R shi
 3) global.R - Global environment variables used in the EE_DVcalc app. Developers will need to make changes to this file for the app to function.
 4) server.R and ui.R - scripts that provide the R shiny server-side functions and build the user interface for the app.
 5) xlsx folder - contains template files used to write ozone and PM2.5 outputs from the app to Excel, with built-in functions to calculate the DVs
-6) deploy.R - deployment script for staging and public Posit Connect deployments.
+6) deploy.R - deployment script for staging Posit Connect deployments only.
 
 # Data workflow
 
@@ -160,24 +160,27 @@ Staging deployments use the bundled `aqsdata.Rdata` file.
 
 ## Deploy to staging with `deploy.R`
 
-The script selects the data source based on the current Git branch: `main`
-deploys using the pins board, while any other branch deploys using the local
-Rdata file. For a staging deployment, use a feature or review branch, not
-`main`.
+The script is for staging only. It always packages the app with
+`public.server <- FALSE` so it uses the bundled local Rdata file, regardless
+of the current branch or the tracked setting in `global.R`. It never selects
+the public pins board or the public app name.
 
-Configure these variables in your local `.Renviron` file (or in the deployment
-environment):
+Configure the staging server URL and, if needed, staging credentials in your
+local `.Renviron` file (or in the deployment environment):
 
 ```text
-CONNECT_SERVER=https://your-staging-connect-server
-CONNECT_ACCOUNT=dmap
-CONNECT_API_KEY=your_api_key
+CONNECT_STAGING_SERVER=https://your-staging-connect-server
+CONNECT_STAGING_ACCOUNT=dmap
+CONNECT_STAGING_API_KEY=your_api_key
 ```
 
-`CONNECT_ACCOUNT` defaults to `dmap`. Run the script from the repository root
-while checked out to a non-`main` branch. Leave `public.server <- TRUE` in the
-tracked `global.R`; the script requires this setting before preparing its
-staging copy. You can run the script directly in the RStudio console:
+`CONNECT_STAGING_SERVER` is required; there is no fallback to a generic or
+public-server setting. `CONNECT_STAGING_ACCOUNT` defaults to `dmap`, and the
+API key can be omitted if `rsconnect` is already configured for that staging
+server and account. Set the URL to the staging Connect server. The script
+creates a branch-specific app name prefixed with `ee_dvcalc_staging_`. It can
+be run from any branch from the repository root, directly in the RStudio
+console:
 
 ```r
 source("deploy.R")
@@ -189,21 +192,17 @@ Or from a shell:
 Rscript deploy.R
 ```
 
-The script deploys to a branch-specific app name, packages a temporary copy
-with `public.server <- FALSE`, and records the branch, commit, and deployment
-time in that package. It does not change the tracked `global.R` file.
+The script packages a temporary copy with `public.server <- FALSE` and records
+the branch, commit, and deployment time in that package. It does not change
+the tracked `global.R` file.
 
-# Deploy to the public server
+# Public deployment
 
-For a public deployment, check out `main`, configure `CONNECT_SERVER` for the
-public Connect server, and ensure `global.R` has `public.server <- TRUE`.
-Confirm the target server, account, app name, and data-source setting before
-running the script; it does not prompt for confirmation. The branch determines
-the packaged data source and app name, not the server URL.
-The script deploys the `ee_dvcalc` app using the pins board. Confirm the hosted
-app has `AQS_USER`, `AQS_API_KEY`, `app_owner`, and access to the supporting
-pin. Existing public content may use a different app name; coordinate with
-the developer before replacing or creating public content.
+`deploy.R` does not deploy to the public server. Public deployment must use a
+separate, explicitly reviewed workflow; confirm the target, app name, data
+source, and hosted credentials with the developer before publishing public
+content. Public deployments need `AQS_USER`, `AQS_API_KEY`, `app_owner`, and
+access to the supporting pin.
 
 # Contact
 Ben Wells (Wells.Benjamin@epa.gov)
