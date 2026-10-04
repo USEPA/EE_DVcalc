@@ -119,35 +119,12 @@ daily data tabs.
 It is strongly recommended that you click **Clear Selections** before
 selecting a new pollutant, monitoring site, or design value period.
 
-# Testing and validation
-
-The repository does not currently include an automated test suite.
-Before sharing or publishing changes, use the following manual checks:
-
-1) Start the app with the intended data source and confirm the selection menus
-   populate without errors.
-2) Retrieve data for a known site and period for ozone, PM2.5 annual, and PM2.5
-   24-hour standards. Compare the initial values and completeness/validity
-   information with a trusted reference for those selections.
-3) Select exclusions, recalculate, and check the results against a known
-   exclusion example. For ozone, check hourly selections as well as daily
-   selections.
-4) Download each pollutant's Excel output and inspect the site, period, data,
-   and formulas. Compare the spreadsheet calculation with the app results.
-5) Use **Clear Selections**, then retrieve another site or period and confirm
-   the results correspond to the new selections.
-6) Repeat the relevant checks on the staging deployment. Record the branch,
-   data source, test selections, expected results, and any limitations in the
-   pull request.
-
-These checks are a validation workflow, not a claim that a particular branch
-or deployment has passed them.
 
 # Test and deploy to staging
 
 Staging deployments use the bundled `aqsdata.Rdata` file.
 
-## Publish to staging from RStudio
+## Option 1: Publish to staging from RStudio
 
 1) Check out the feature or review branch you want to test.
 2) In `global.R`, temporarily set `public.server <- FALSE`.
@@ -158,7 +135,7 @@ Staging deployments use the bundled `aqsdata.Rdata` file.
 5) After publishing, restore `public.server <- TRUE` in `global.R`. Confirm
    that the setting is `TRUE` before committing or pushing.
 
-## Deploy to staging with `deploy.R`
+## Option 2: Deploy to staging with `deploy.R`
 
 The script is for staging only. It always packages the app with
 `public.server <- FALSE` so it uses the bundled local Rdata file, regardless
