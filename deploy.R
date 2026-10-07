@@ -17,44 +17,43 @@ get_git_value <- function(args) {
   trimws(paste(value, collapse = "\n"))
 }
 
-## Keep one stable target per branch; detached HEAD uses a target per full commit.
-get_app_name <- function(branch, commit) {
-  detached <- identical(branch, "HEAD")
-  ref <- if (detached) paste0("commit:", commit) else paste0("branch:", branch)
-  ## Hash the original ref, so feature/foo and feature_foo have different names.
-  ## Base R hashes a temporary file, avoiding an additional package dependency.
-  ref_file <- tempfile("ee_dvcalc_ref_")
-  on.exit(unlink(ref_file), add = TRUE)
-  writeBin(charToRaw(enc2utf8(ref)), ref_file)
-  ref_hash <- unname(tools::md5sum(ref_file))
-  if (is.na(ref_hash)) {
-    stop("Unable to hash Git deployment ref.")
+## Use the branch name directly, without commit IDs or hash suffixes.
+get_app_name <- function(branch) {
+  if (identical(branch, "HEAD")) {
+    stop("Check out a named branch before deploying; detached HEAD is not supported.")
   }
-  label <- if (detached) paste0("detached_", substr(commit, 1, 7)) else branch
-  label <- gsub("[^A-Za-z0-9_-]", "_", label)
-  prefix <- "ee_dvcalc_staging_"
-  ## Shorten only the readable label to fit Connect's 64-character name limit.
-  label <- substr(label, 1, 64 - nchar(prefix) - nchar(ref_hash) - 1)
-  paste0(prefix, label, "_", ref_hash)
+  ## Reject rather than rewrite names, so feature/foo cannot overwrite feature_foo.
+  if (!grepl("^[A-Za-z0-9_-]+$", branch)) {
+    stop("Deploy from a branch using only letters, digits, underscores, and hyphens.")
+  }
+  name <- paste0("ee_dvcalc_staging_", branch)
+  if (nchar(name) > 64) {
+    stop("Use a shorter branch name; the staging app name must be at most 64 characters.")
+  }
+  name
 }
 
-## Keep the full commit for detached-HEAD naming and a short version for metadata.
+## Record the commit in bundle metadata, not in the app name.
 current_branch <- get_git_value(c("rev-parse", "--abbrev-ref", "HEAD"))
 git_commit <- get_git_value(c("rev-parse", "HEAD"))
 current_commit <- substr(git_commit, 1, 7)
+app_name <- get_app_name(current_branch)
 
 ## These settings belong to the local deployment process, not the hosted app.
 ## No generic/public server fallback is allowed; the URL itself is not validated.
-connect_server_url <- trimws(Sys.getenv("CONNECT_STAGING_SERVER"))
-if (!nzchar(connect_server_url)) {
-  stop("Set CONNECT_STAGING_SERVER to the staging Posit Connect URL.")
-}
+#connect_server_url <- trimws(Sys.getenv("CONNECT_STAGING_SERVER"))
+#if (!nzchar(connect_server_url)) {
+#  stop("Set CONNECT_STAGING_SERVER to the staging Posit Connect URL.")
+#}
+connect_server_url <- "https://rstudio-connect.dmap-stage.aws.epa.gov"
+
 connect_account <- trimws(Sys.getenv("CONNECT_STAGING_ACCOUNT"))
 if (!nzchar(connect_account)) {
   connect_account <- "dmap"
 }
 connect_api_key <- Sys.getenv("CONNECT_STAGING_API_KEY")
-connect_server_name <- "ee_dvcalc_staging"
+## Match the existing rsconnect server alias where the staging accounts are saved.
+connect_server_name <- "dmap"
 
 ## Register the staging URL locally. Without a supplied key, use saved credentials.
 ## Configure hosted AQS credentials separately in the Connect app environment.
@@ -118,16 +117,14 @@ writeLines(c(
   paste0("deployed: ", deployed_at)
 ), file.path(deployment_dir, "git_info.txt"))
 
-app_name <- get_app_name(current_branch, git_commit)
-
 message(
   "Deploying ", app_name, " with ",
   "local Rdata data to the staging Connect server."
 )
 
 ## Upload immediately, without a confirmation prompt or opening a browser.
-## forceUpdate replaces this ref's existing staging app; other refs have hashed names.
-## Hashed names differ from the old naming scheme and can create new staging apps.
+## forceUpdate replaces this branch's existing staging app.
+## Branch-only names create new apps rather than updating earlier hashed targets.
 rsconnect::deployApp(
   appDir = deployment_dir,
   appName = app_name,
