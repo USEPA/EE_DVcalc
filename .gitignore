@@ -3,3 +3,6 @@
 
 # Local credentials
 .Renviron
+
+# Metadata file
+.yaml
