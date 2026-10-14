@@ -1,0 +1,43 @@
+---
+title: "Exceptional Event Design Value Calculator"
+project_id: "EE_DVcalc"
+project_type: "application"
+description: "This tool allows users to determine the regulatory significance of submitted or anticipated Exceptional Events demonstrations pursuant to 40 CFR §50.14 by re-calculating the design values for Ozone or PM2.5 monitoring sites with reported concentrations potentially affected by exceptional events excluded from the calculation."
+
+url: "https://www.epa.gov/air-quality-analysis/exceptional-events-design-value-tool"
+status: "active"
+created: "2021-03-19"
+last_updated: "2026-10-14"
+
+owner:
+  name: "Ben Wells"
+  organization: "US EPA"
+  contact: "wells.benjamin@epa.gov"
+  github: "bentwells"
+
+maintainers: "Ben Wells"
+
+repository:
+  url: "https://github.com/USEPA/EE_DVcalc/"
+  license: ""
+
+software:
+  languages: "R"
+  dependencies: ["openxlsx","pins","RAQSAPI","shiny"]
+  environment: "DMAP public and staging servers"
+
+data:
+  sources: "AQS"
+  access_notes: "Uses AQS API to retrieve concentration data in real-time and pulls down other data from AQS weekly using SQL queries"
+  classification: "public"
+
+outputs:
+  files: "aqsdata.Rdata"
+  description: "Static copy of the results from the weekly AQS queries - to be used for development purposes only"
+
+documentation:
+  readme: "README.md"
+  additional_files: ""
+
+notes: "See README.md for details"
+  
