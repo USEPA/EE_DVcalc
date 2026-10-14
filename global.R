@@ -1,8 +1,7 @@
 ## Set server type (public, staging, local)
-## Public is DMAP production server (rconnect-public.epa.gov)
-## Staging is DMAP staging server (rstudio-connect.dmap-stage.aws.epa.gov)
+## Remote is DMAP staging server (rstudio-connect.dmap-stage.aws.epa.gov)
 ## Local is your local machine
-server.type <- "local"
+server.type <- "remote"
 
 ## Set options, load required packages
 options(stringsAsFactors=FALSE)
@@ -43,9 +42,9 @@ avg24 <- function(x,sub,lvl) {
 }
 
 ## Load monitor metadata, EE concurrences, method codes, o3 seasons, pm2.5 sampling schedules
-## server.type == "public" or "staging" - load from pins stored on DMAP
-## server.tyep == "local" - load local AQS data file (after running "update_data.r")
-if (server.type %in% c("public","staging")) {
+## server.type == "remote" - load from pins stored on DMAP
+## server.type == "local" - load local AQS data file
+if (server.type == "remote") {
   board <- pins::board_connect()
   aqs.list <- pin_read(board,name=paste(Sys.getenv("app_owner"),"EE_DVcalc_AQSdata",sep="/"))
   o3.methods <- aqs.list$o3.methods

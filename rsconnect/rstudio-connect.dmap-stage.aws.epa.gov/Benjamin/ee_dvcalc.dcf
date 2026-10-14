@@ -1,0 +1,13 @@
+name: ee_dvcalc
+title: EE_DVcalc
+username: Benjamin
+account: Benjamin
+server: rstudio-connect.dmap-stage.aws.epa.gov
+hostUrl: https://rstudio-connect.dmap-stage.aws.epa.gov/__api__
+appId: 18
+bundleId: 14418
+url: https://rstudio-connect.dmap-stage.aws.epa.gov/EE_DVcalc/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: .gitattributes|.github/ISSUE_TEMPLATE/general_issue.md|.Renviron.example|aqsdata.Rdata|deploy.R|EE_DVcalc_update.Rmd|README.md
