@@ -14,12 +14,12 @@ This repository contains the source code and other files for the EE_DVcalc R shi
 
 # Repository Contents
 
-1) aqsdata.Rdata - static data file that provides all AQS data not available through the AQS API 
-2) EE_DVcalc_update.Rmd - source code for the weekly process to refresh the AQS data not available through the API. Can only be run by users with direct SQL access to the AQS database. Provided for reference only, not needed to run the app locally.
-3) global.R - Global environment variables used in the EE_DVcalc app. Developers will need to make changes to this file for the app to function.
-4) server.R and ui.R - scripts that provide the R shiny server-side functions and build the user interface for the app.
-5) xlsx folder - contains template files used to write ozone and PM2.5 outputs from the app to Excel, with built-in functions to calculate the DVs
-6) deploy.R - deployment script for Posit Connect deployments to the staging server only.
+1) `aqsdata.Rdata` - static data file that provides all AQS data not available through the AQS API 
+2) `EE_DVcalc_update.Rmd` - source code for the weekly process to refresh the AQS data not available through the API. Can only be run by users with direct SQL access to the AQS database. Provided for reference only, not needed to run the app locally.
+3) `global.R` - Global environment variables used in the EE_DVcalc app. Developers will need to make changes to this file for the app to function.
+4) `server.R` and `ui.R` - scripts that provide the R shiny server-side functions and build the user interface for the app.
+5) `xlsx` folder - contains template files used to write ozone and PM2.5 outputs from the app to Excel, with built-in functions to calculate the DVs
+6) `deploy.R` - deployment script for Posit Connect deployments to the staging server only.
 
 # Data workflow
 
@@ -30,9 +30,9 @@ The application uses two data sources:
   the app uses the bundled metadata file.
 - Monitor metadata, exceptional-event concurrences, ozone method codes and
   monitoring seasons, and PM2.5 sampling schedules are loaded at startup.
-  With server.type = 'public' or 'staging', `global.R` reads these from the
-  `<app_owner>/EE_DVcalc_AQSdata` pin on Posit Connect. With server.type =
-  'local', it loads `aqsdata.Rdata` from the app folder.
+  With `server.type = "remote"`, `global.R` reads these from the
+  `<app_owner>/EE_DVcalc_AQSdata` pin on Posit Connect. With `server.type =
+  "local"`, it loads `aqsdata.Rdata` from the app folder.
 
 The bundled file is a static snapshot; it is not updated automatically when
 the app runs. Local and staging results may differ from public results if the
@@ -92,9 +92,9 @@ them in the refresh report's environment, separately from the Shiny app.
 1) Clone this repository to your local machine.
 2) You will need an AQS API key. Instructions on how to register for an API key are here: https://aqs.epa.gov/aqsweb/documents/data_api.html#signup
 3) Set `AQS_API_USER` and `AQS_API_KEY` in your local `.Renviron` file.
-4) In `global.R`, set server.type <- `local` to use the bundled data.
+4) In `global.R`, set `server.type <- "local"` to use the bundled data.
 5) In RStudio, open the repository folder, then run the app from `ui.R`, or run `shiny::runApp()` from the R console.
-6) Restore server.type <- "staging" before committing or pushing changes.
+6) Restore `server.type <- "remote"` before committing or pushing changes.
 
 # Using the application
 
@@ -122,25 +122,22 @@ selecting a new pollutant, monitoring site, or design value period.
 
 # Test and deploy to staging
 
-Staging deployments use the bundled `aqsdata.Rdata` file.
+Local deployments use the bundled `aqsdata.Rdata` file.
 
 ## Option 1: Publish to staging from RStudio
 
 1) Check out the feature or review branch you want to test.
-2) In `global.R`, temporarily set server.type <- "staging".
+2) In `global.R`, temporarily set `server.type <- "local"`.
 3) Run the app locally and confirm it uses the bundled data.
-4) Use RStudio's **Publish** button and select the staging Connect server and
-   account. Choose a branch-specific app name so the staging deployment does
-   not replace the public app.
-5) After publishing, restore server.type <- "public" in `global.R`. Confirm
-   that the setting is `TRUE` before committing or pushing.
+4) Restore `server.type <- "remote"` in `global.R`.
+5) Use RStudio's **Publish** button and select the staging Connect server and
+   account.
 
 ## Option 2: Deploy to staging with `deploy.R`
 
-The script is for staging only. It always packages the app with server.type
-<- "staging" so it uses the bundled local Rdata file, regardless of the
-current branch or the tracked setting in `global.R`. It never selects the
-public pins board or the public app name.
+This script is for staging only. It always packages the app with `server.type
+<- "remote"` so it uses the pins stored on the remote server, regardless of the
+current branch or the tracked setting in `global.R`.
 
 Configure the staging server URL and, if needed, staging credentials in your
 local `.Renviron` file (or in the deployment environment):
@@ -169,7 +166,7 @@ Or from a shell:
 Rscript deploy.R
 ```
 
-The script packages a temporary copy with server.type <- "local" and records
+The script packages a temporary copy with `server.type <- "local"` and records
 the branch, commit, and deployment time in that package. It does not change
 the tracked `global.R` file.
 
