@@ -1,10 +1,16 @@
+## Set server type (public, staging, local)
+## Public is DMAP production server (rconnect-public.epa.gov)
+## Staging is DMAP staging server (rstudio-connect.dmap-stage.aws.epa.gov)
+## Local is your local machine
+server.type <- "local"
+
 ## Set options, load required packages
 options(stringsAsFactors=FALSE)
 require(openxlsx,quietly=TRUE,warn.conflicts=FALSE)
 require(pins,quietly=TRUE,warn.conflicts=FALSE)
 require(RAQSAPI,quietly=TRUE,warn.conflicts=FALSE)
 require(shiny,quietly=TRUE,warn.conflicts=FALSE)
-aqs_credentials(username=Sys.getenv("AQSAPI_user"),key=Sys.getenv("AQSAPI_key"))
+aqs_credentials(username=Sys.getenv("AQS_API_USER"),key=Sys.getenv("AQS_API_KEY"))
 curr.year <- as.numeric(substr(as.character(Sys.Date()),1,4)) - 
   ifelse(as.numeric(substr(as.character(Sys.Date()),6,7)) > 1,1,2)
 
@@ -37,14 +43,20 @@ avg24 <- function(x,sub,lvl) {
 }
 
 ## Load monitor metadata, EE concurrences, method codes, o3 seasons, pm2.5 sampling schedules
-board <- pins::board_connect()
-aqs.list <- pin_read(board,name=paste(Sys.getenv("app_owner"),"EE_DVcalc_AQSdata",sep="/"))
-o3.methods <- aqs.list$o3.methods
-o3.monitors <- aqs.list$o3.monitors
-o3.seasons <- aqs.list$o3.seasons
-pm.monitors <- aqs.list$pm.monitors
-pm.schedules <- aqs.list$pm.schedules
-pm.makeup.samples <- aqs.list$pm.makeup.samples
-o3.concurrences <- aqs.list$o3.concurrences
-pm.concurrences.hourly <- aqs.list$pm.concurrences.hourly
-pm.concurrences.daily <- aqs.list$pm.concurrences.daily
+## server.type == "public" or "staging" - load from pins stored on DMAP
+## server.tyep == "local" - load local AQS data file (after running "update_data.r")
+if (server.type %in% c("public","staging")) {
+  board <- pins::board_connect()
+  aqs.list <- pin_read(board,name=paste(Sys.getenv("app_owner"),"EE_DVcalc_AQSdata",sep="/"))
+  o3.methods <- aqs.list$o3.methods
+  o3.monitors <- aqs.list$o3.monitors
+  o3.seasons <- aqs.list$o3.seasons
+  pm.monitors <- aqs.list$pm.monitors
+  pm.schedules <- aqs.list$pm.schedules
+  pm.makeup.samples <- aqs.list$pm.makeup.samples
+  o3.concurrences <- aqs.list$o3.concurrences
+  pm.concurrences.hourly <- aqs.list$pm.concurrences.hourly
+  pm.concurrences.daily <- aqs.list$pm.concurrences.daily
+} else {
+  load("aqsdata.Rdata")
+}
