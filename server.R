@@ -561,12 +561,7 @@ shinyServer(function(input,output,session) {
         check3 <- !is.na(dv$dv) & dv$dv > level
         ann$valid[inv] <- check1[inv] & (check2[inv] | check3)
         dv$valid <- all(ann$valid)
-        ## Substitution test 1: sites with DV > NAAQS level
-        ## Substitutions use minima for the same calendar quarter across the
-        ## three-year period. They affect the validity test, not the reported DV.
-        ## Plain language test description:
-        ## Would the result still exceed the standard if missing samples
-        ## needed to reach 11 observations per quarter were filled with lows?
+        ## Substitution test 1: sites with DV > NAAQS level, >= 11 obs per quarter
         qtr.obs <- tapply(qtr$obs,list(qtr$quarter),sum)
         if (dv$dv > level & min(qtr$obs) < 11 & all(qtr.obs > 30)) {
           qtr.min <- tapply(data$conc,list(quarters),min.na)
@@ -587,12 +582,6 @@ shinyServer(function(input,output,session) {
         }
       }
       ## Substitution test 2: sites with DV <= NAAQS level, all quarters >= 50% complete
-      ## Fill missing scheduled samples in incomplete quarters with the
-      ## three-year calendar-quarter maxima to test validity conservatively.
-      ## The reported DV retains the original, unsubstituted concentrations.
-      ## Plain language test description:
-      ## Would the result still be at or below the standard if missing
-      ## scheduled samples in incomplete quarters were filled with highs?
       if (!is.na(dv$dv) & !dv$valid & all(qtr$pct >= 50)) {
         test.qtr <- qtr; test.ann <- ann; concs <- data$conc;
         qtr.max <- tapply(data$conc,list(quarters),max.na)
@@ -666,13 +655,6 @@ shinyServer(function(input,output,session) {
       dv <- list(dv=floor(mean.na(ann$p98)+0.5),valid=all(ann$valid))
       if (all(ann$obs > 0) & dv$dv > level) { dv$valid <- TRUE }
       ## Apply substitution test if all quarters >= 50% complete
-      ## This test changes validity only. Its strict comparison (< level)
-      ## differs from the annual test (<= level); preserve that distinction
-      ## unless a domain review supports changing the boundary.
-      ## Plain language test description:
-      ## Would the result still be below the standard if missing scheduled
-      ## samples in incomplete quarters were filled with highs from the same
-      ## calendar quarter across all three years?
       if (!is.na(dv$dv) & !dv$valid & all(qtr$pct >= 50)) {
         test <- ann[,c(1:4)]; concs <- data$conc;
         qtr.max <- tapply(data$conc,list(quarters),max.na)

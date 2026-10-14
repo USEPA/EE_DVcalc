@@ -1,6 +1,8 @@
-## TRUE uses the public pins board; set FALSE for local or staging data.
-## Restore TRUE before committing or deploying to the public server.
-public.server <- TRUE
+## Set server type (public, staging, local)
+## Public is DMAP production server (rconnect-public.epa.gov)
+## Staging is DMAP staging server (rstudio-connect.dmap-stage.aws.epa.gov)
+## Local is your local machine
+server.type <- "local"
 
 ## Set options, load required packages
 options(stringsAsFactors=FALSE)
@@ -8,7 +10,7 @@ require(openxlsx,quietly=TRUE,warn.conflicts=FALSE)
 require(pins,quietly=TRUE,warn.conflicts=FALSE)
 require(RAQSAPI,quietly=TRUE,warn.conflicts=FALSE)
 require(shiny,quietly=TRUE,warn.conflicts=FALSE)
-aqs_credentials(username=Sys.getenv("AQS_USER"),key=Sys.getenv("AQS_API_KEY"))
+aqs_credentials(username=Sys.getenv("AQS_API_USER"),key=Sys.getenv("AQS_API_KEY"))
 curr.year <- as.numeric(substr(as.character(Sys.Date()),1,4)) - 
   ifelse(as.numeric(substr(as.character(Sys.Date()),6,7)) > 1,1,2)
 
@@ -41,10 +43,9 @@ avg24 <- function(x,sub,lvl) {
 }
 
 ## Load monitor metadata, EE concurrences, method codes, o3 seasons, pm2.5 sampling schedules
-## Both sources provide the same nine objects used by server.R; the local file
-## stores them as separate objects rather than the pins list. Neither source
-## replaces the live AQS API requests for concentration data.
-if (public.server) {
+## server.type == "public" or "staging" - load from pins stored on DMAP
+## server.tyep == "local" - load local AQS data file (after running "update_data.r")
+if (server.type %in% c("public","staging")) {
   board <- pins::board_connect()
   aqs.list <- pin_read(board,name=paste(Sys.getenv("app_owner"),"EE_DVcalc_AQSdata",sep="/"))
   o3.methods <- aqs.list$o3.methods
