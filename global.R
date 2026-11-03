@@ -1,4 +1,4 @@
-## Set server type (public, staging, local)
+## Set server type (remote, local)
 ## Remote is DMAP staging server (rstudio-connect.dmap-stage.aws.epa.gov)
 ## Local is your local machine
 server.type <- "remote"
