@@ -2,15 +2,15 @@
 
 R shiny application developed by Ben Wells, US EPA
 
-Latest Update: October 14, 2026
+Latest Update: November 3, 2026
 
 https://www.epa.gov/air-quality-analysis/exceptional-events-design-value-tool
 
-# Description
+## Description
 
 The Exceptional Events Design Value tool (EE_DVcalc) allows state, local, and tribal air monitoring agencies to determine the regulatory significance of ozone and PM2.5 concentrations impacted by exceptional events (i.e., whether excluding concentrations affected by exceptional events will affect attainment of the NAAQS) by calculating the impact of excluding these concentrations from the design value, the statistic used to determine whether an ambient air quality monitoring site is meeting the NAAQS.
 
-# Repository Contents
+## Repository Contents
 
 This repository contains the source code and other files for the EE_DVcalc R shiny app. The ozone and PM2.5 concentration data is retrieved from EPA's Air Quality System (AQS) API directly through the app. However, the app also pulls from some AQS tables that are not currently available through the API. These are updated weekly through an automated process that is server-specific and requires a direct connection to the AQS database. For developers, we have provided a static data file that contains the output from those direct SQL queries. Individual file contents are listed below.
 
@@ -21,7 +21,7 @@ This repository contains the source code and other files for the EE_DVcalc R shi
 5) `xlsx` folder - contains template files used to write ozone and PM2.5 outputs from the app to Excel, with built-in functions to calculate the DVs
 6) `deploy.R` - deployment script for Posit Connect deployments to the staging server only.
 
-# Data workflow
+## Data workflow
 
 The application uses two data sources:
 
@@ -39,7 +39,7 @@ the app runs. Local and staging results may differ from public results if the
 snapshot and the public pin contain different metadata or concurrences.
 Keep `aqsdata.Rdata` and the `xlsx/` templates available in a staging deployment.
 
-# Refresh the supporting data
+## Refresh the supporting data
 
 `EE_DVcalc_update.Rmd` is provided for reference only, not needed to run the
 app locally. The server-specific weekly process requires direct AQS database
@@ -50,7 +50,7 @@ If a newer snapshot is needed for testing, obtain an updated `aqsdata.Rdata`
 from the developer. Confirm that it contains the same nine objects expected
 by `global.R`; publishing the app does not refresh this snapshot.
 
-# Requirements and credentials
+## Requirements and credentials
 
 Use R and, for the RStudio workflow, RStudio. The app requires the R packages
 `shiny`, `RAQSAPI`, `pins`, and `openxlsx`; `deploy.R` additionally requires
@@ -87,7 +87,7 @@ API credentials and are not needed to run or publish the Shiny app. Their
 existing names remain unchanged. If the report runs on Posit Connect, configure
 them in the refresh report's environment, separately from the Shiny app.
 
-# How to get the application running locally
+## How to get the application running locally
 
 1) Clone this repository to your local machine.
 2) You will need an AQS API key. Instructions on how to register for an API key are here: https://aqs.epa.gov/aqsweb/documents/data_api.html#signup
@@ -96,7 +96,7 @@ them in the refresh report's environment, separately from the Shiny app.
 5) In RStudio, open the repository folder, then run the app from `ui.R`, or run `shiny::runApp()` from the R console.
 6) Restore `server.type <- "remote"` before committing or pushing changes.
 
-# Using the application
+## Using the application
 
 Choose a pollutant, standard, state, county, site ID, and design value period
 from the drop-down menus in the left-hand panel. You may choose to exclude
@@ -120,11 +120,11 @@ daily data tabs.
 It is strongly recommended that you click **Clear Selections** before
 selecting a new pollutant, monitoring site, or design value period.
 
-# Test and deploy to staging
+## Test and deploy to staging
 
 Local deployments use the bundled `aqsdata.Rdata` file.
 
-## Option 1: Publish to staging from RStudio
+### Option 1: Publish to staging from RStudio
 
 1) Check out the feature or review branch you want to test.
 2) In `global.R`, temporarily set `server.type <- "local"`.
@@ -133,7 +133,7 @@ Local deployments use the bundled `aqsdata.Rdata` file.
 5) Use RStudio's **Publish** button and select the staging Connect server and
    account.
 
-## Option 2: Deploy to staging with `deploy.R`
+### Option 2: Deploy to staging with `deploy.R`
 
 This script is for staging only. It always packages the app with `server.type
 <- "remote"` so it uses the pins stored on the remote server, regardless of the
@@ -170,7 +170,7 @@ The script packages a temporary copy with `server.type <- "local"` and records
 the branch, commit, and deployment time in that package. It does not change
 the tracked `global.R` file.
 
-# Public deployment
+## Public deployment
 
 `deploy.R` does not deploy to the public server. Public deployment must use a
 separate, explicitly reviewed workflow; confirm the target, app name, data
@@ -178,5 +178,5 @@ source, and hosted credentials with the developer before publishing public
 content. Public deployments need `AQS_API_USER`, `AQS_API_KEY`, `app_owner`,
 and access to the supporting pin.
 
-# Contact
+## Contact
 Ben Wells, US EPA (Wells.Benjamin@epa.gov)
