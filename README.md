@@ -85,8 +85,6 @@ CONNECT_STAGING_API_KEY=your_api_key
 
 `CONNECT_STAGING_SERVER` is required; there is no fallback to a generic or public-server setting. `CONNECT_STAGING_ACCOUNT` defaults to `dmap`, and the API key can be omitted if `rsconnect` is already configured for that staging server and account. Set the URL to the staging Connect server. The script creates a branch-specific app name prefixed with `ee_dvcalc_staging_`. It can be run from any branch from the repository root, directly in the RStudio console.
 
-The script packages a temporary copy with `server.type <- "local"` and records the branch, commit, and deployment time in that package. It does not change the tracked `global.R` file.
-
 ## Public deployment
 
 `deploy.R` does not deploy to the public server. Public deployment must use a separate, explicitly reviewed workflow; confirm the target, app name, data source, and hosted credentials with the developer before publishing public content. Public deployments need `AQS_API_USER`, `AQS_API_KEY`, `app_owner`, and access to the supporting pin.
