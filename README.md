@@ -10,9 +10,9 @@ https://www.epa.gov/air-quality-analysis/exceptional-events-design-value-tool
 
 The Exceptional Events Design Value tool (EE_DVcalc) allows state, local, and tribal air monitoring agencies to determine the regulatory significance of ozone and PM2.5 concentrations impacted by exceptional events (i.e., whether excluding concentrations affected by exceptional events will affect attainment of the NAAQS) by calculating the impact of excluding these concentrations from the design value, the statistic used to determine whether an ambient air quality monitoring site is meeting the NAAQS.
 
-This repository contains the source code and other files for the EE_DVcalc R shiny app. The ozone and PM2.5 concentration data is retrieved from EPA's Air Quality System (AQS) API directly through the app. However, the app also pulls from some AQS tables that are not currently available through the API. These are updated weekly through an automated process that is server-specific and requires a direct connection to the AQS database. For developers, we have provided a static data file that contains the output from those direct SQL queries.
-
 # Repository Contents
+
+This repository contains the source code and other files for the EE_DVcalc R shiny app. The ozone and PM2.5 concentration data is retrieved from EPA's Air Quality System (AQS) API directly through the app. However, the app also pulls from some AQS tables that are not currently available through the API. These are updated weekly through an automated process that is server-specific and requires a direct connection to the AQS database. For developers, we have provided a static data file that contains the output from those direct SQL queries. Individual file contents are listed below.
 
 1) `aqsdata.Rdata` - static data file that provides all AQS data not available through the AQS API 
 2) `EE_DVcalc_update.Rmd` - source code for the weekly process to refresh the AQS data not available through the API. Can only be run by users with direct SQL access to the AQS database. Provided for reference only, not needed to run the app locally.
