@@ -21,36 +21,7 @@ This repository contains the source code and other files for the EE_DVcalc R shi
 5) `xlsx` folder - contains template files used to write ozone and PM2.5 outputs from the app to Excel, with built-in functions to calculate the DVs
 6) `deploy.R` - deployment script for Posit Connect deployments to the staging server only.
 
-## Data workflow
-
-The application uses two data sources:
-
-- Concentration data is retrieved through the AQS API when users click
-  **Get Selections**. API credentials and network access are needed even when
-  the app uses the bundled metadata file.
-- Monitor metadata, exceptional-event concurrences, ozone method codes and
-  monitoring seasons, and PM2.5 sampling schedules are loaded at startup.
-  With `server.type = "remote"`, `global.R` reads these from the
-  `<app_owner>/EE_DVcalc_AQSdata` pin on Posit Connect. With `server.type =
-  "local"`, it loads `aqsdata.Rdata` from the app folder.
-
-The bundled file is a static snapshot; it is not updated automatically when
-the app runs. Local and staging results may differ from public results if the
-snapshot and the public pin contain different metadata or concurrences.
-Keep `aqsdata.Rdata` and the `xlsx/` templates available in a staging deployment.
-
-## Refresh the supporting data
-
-`EE_DVcalc_update.Rmd` is provided for reference only, not needed to run the
-app locally. The server-specific weekly process requires direct AQS database
-access and publishes the supporting data to the `EE_DVcalc_AQSdata` pin.
-It is separate from running or publishing the Shiny app.
-
-If a newer snapshot is needed for testing, obtain an updated `aqsdata.Rdata`
-from the developer. Confirm that it contains the same nine objects expected
-by `global.R`; publishing the app does not refresh this snapshot.
-
-## Requirements and credentials
+## Requirements and credentials needed
 
 Use R and, for the RStudio workflow, RStudio. The app requires the R packages
 `shiny`, `RAQSAPI`, `pins`, and `openxlsx`; `deploy.R` additionally requires
@@ -86,6 +57,33 @@ The reference refresh report, `EE_DVcalc_update.Rmd`, uses `AQS_userid` and
 API credentials and are not needed to run or publish the Shiny app. Their
 existing names remain unchanged. If the report runs on Posit Connect, configure
 them in the refresh report's environment, separately from the Shiny app.
+
+## How to refresh the supporting data
+
+The application uses two data sources:
+
+- Concentration data is retrieved through the AQS API when users click
+  **Get Selections**. API credentials and network access are needed even when
+  the app uses the bundled metadata file.
+- Monitor metadata, exceptional-event concurrences, ozone method codes and
+  monitoring seasons, and PM2.5 sampling schedules are loaded at startup.
+  With `server.type = "remote"`, `global.R` reads these from the
+  `<app_owner>/EE_DVcalc_AQSdata` pin on Posit Connect. With `server.type =
+  "local"`, it loads `aqsdata.Rdata` from the app folder.
+
+The bundled file is a static snapshot; it is not updated automatically when
+the app runs. Local and staging results may differ from public results if the
+snapshot and the public pin contain different metadata or concurrences.
+Keep `aqsdata.Rdata` and the `xlsx/` templates available in a staging deployment.
+
+`EE_DVcalc_update.Rmd` is provided for reference only, not needed to run the
+app locally. The server-specific weekly process requires direct AQS database
+access and publishes the supporting data to the `EE_DVcalc_AQSdata` pin.
+It is separate from running or publishing the Shiny app.
+
+If a newer snapshot is needed for testing, obtain an updated `aqsdata.Rdata`
+from the developer. Confirm that it contains the same nine objects expected
+by `global.R`; publishing the app does not refresh this snapshot.
 
 ## How to get the application running locally
 
