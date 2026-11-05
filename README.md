@@ -1,17 +1,12 @@
 # EE\_DVcalc - Exceptional Events Design Value Calculator
-
 R shiny application developed by Ben Wells, US EPA
-
 Latest Update: November 3, 2026
-
 https://www.epa.gov/air-quality-analysis/exceptional-events-design-value-tool
 
 ## Description
-
 The Exceptional Events Design Value tool (EE_DVcalc) allows state, local, and tribal air monitoring agencies to determine the regulatory significance of ozone and PM2.5 concentrations impacted by exceptional events (i.e., whether excluding concentrations affected by exceptional events will affect attainment of the NAAQS) by calculating the impact of excluding these concentrations from the design value, the statistic used to determine whether an ambient air quality monitoring site is meeting the NAAQS.
 
 ## Repository Contents
-
 This repository contains the source code and other files for the EE_DVcalc R shiny app. The ozone and PM2.5 concentration data is retrieved from EPA's Air Quality System (AQS) API directly through the app. However, the app also pulls from some AQS tables that are not currently available through the API. These are updated weekly through an automated process that is server-specific and requires a direct connection to the AQS database. For developers, we have provided a static data file that contains the output from those direct SQL queries. Individual file contents are listed below.
 
 1) `aqsdata.Rdata` - static data file that provides all AQS data not available through the AQS API 
@@ -22,7 +17,6 @@ This repository contains the source code and other files for the EE_DVcalc R shi
 6) `deploy.R` - deployment script for Posit Connect deployments to the staging server only.
 
 ## Requirements and credentials needed
-
 The app requires the R packages `shiny`, `RAQSAPI`, `pins`, and `openxlsx`; `deploy.R` additionally requires `rsconnect` and Git.
 
 For local use, copy `.Renviron.example` to `.Renviron` in the repository root and fill in the settings required for your workflow. Set `AQS_API_USER` and `AQS_API_KEY` in your local `.Renviron` file for AQS API access. Restart R after creating or editing `.Renviron` so the values are loaded. Public deployments also need the `app_owner` environment variable and access to the configured pins board.
@@ -30,7 +24,6 @@ For local use, copy `.Renviron.example` to `.Renviron` in the repository root an
 The reference refresh report, `EE_DVcalc_update.Rmd`, uses `AQS_userid` and `AQS_passwd` for direct AQS database access. These are separate from the app's API credentials and are not needed to run or publish the Shiny app. If the report runs on Posit Connect, configure them in the refresh report separately from the Shiny app.
 
 ## How to refresh the supporting data
-
 The application uses two data sources:
 
 - Concentration data is retrieved through the AQS API when users click **Get Selections**. API credentials and network access are needed even when the app uses the bundled metadata file.
@@ -43,7 +36,6 @@ The bundled file is a static snapshot; it is not updated automatically when the 
 If a newer snapshot is needed for testing, obtain an updated `aqsdata.Rdata` from the developer. Confirm that it contains the same nine objects expected by `global.R`; publishing the app does not refresh this snapshot.
 
 ## How to get the application running locally
-
 1) Clone this repository to your local machine.
 2) You will need an AQS API key. Instructions on how to register for an API key are here: https://aqs.epa.gov/aqsweb/documents/data_api.html#signup
 3) Set `AQS_API_USER` and `AQS_API_KEY` in your local `.Renviron` file.
@@ -52,7 +44,6 @@ If a newer snapshot is needed for testing, obtain an updated `aqsdata.Rdata` fro
 6) Restore `server.type <- "remote"` before committing or pushing changes.
 
 ## Using the application
-
 Choose a pollutant, standard, state, county, site ID, and design value period from the drop-down menus in the left-hand panel. You may choose to exclude days with Request Exclusion flags, Informational flags, and/or NAAQS exceedances. Click **Get Selections** to retrieve concentration data from AQS and calculate the design value. Initial AQS data retrieval and design value calculations may take up to a minute to complete.
 
 Select days for exclusion from the daily menu. For ozone, also select the hours to exclude from the hourly menu. You can use Ctrl+click to select multiple values, and Shift+click to select a range of values. Click **Re-Calculate DV** to calculate the design value with the selected values excluded.
@@ -62,11 +53,9 @@ Use **Download Site Design Value Data (xlsx)** to download the results and daily
 It is strongly recommended that you click **Clear Selections** before selecting a new pollutant, monitoring site, or design value period.
 
 ## Test and deploy to staging
-
 Local deployments use the bundled `aqsdata.Rdata` file.
 
 ### Option 1: Deploy to staging from RStudio
-
 1) Check out the feature or review branch you want to test.
 2) In `global.R`, temporarily set `server.type <- "local"`.
 3) Run the app locally and confirm it uses the bundled data.
@@ -74,7 +63,6 @@ Local deployments use the bundled `aqsdata.Rdata` file.
 5) Use RStudio's **Publish** button and select the staging Connect server and account.
 
 ### Option 2: Deploy to staging with `deploy.R`
-
 This script is for staging only. It always packages the app with `server.type <- "remote"` so it uses the pins stored on the remote server, regardless of the current branch or the tracked setting in `global.R`. Configure the staging server URL and, if needed, staging credentials in your local `.Renviron` file (or in the deployment environment):
 
 ```text
@@ -86,7 +74,6 @@ CONNECT_STAGING_API_KEY=your_api_key
 `CONNECT_STAGING_SERVER` is required; there is no fallback to a generic or public-server setting. `CONNECT_STAGING_ACCOUNT` defaults to `dmap`, and the API key can be omitted if `rsconnect` is already configured for that staging server and account. Set the URL to the staging Connect server. The script creates a branch-specific app name prefixed with `ee_dvcalc_staging_`. It can be run from any branch from the repository root, directly in the RStudio console.
 
 ## Public deployment
-
 `deploy.R` does not deploy to the public server. Public deployment must use a separate, explicitly reviewed workflow; confirm the target, app name, data source, and hosted credentials with the developer before publishing public content. Public deployments need `AQS_API_USER`, `AQS_API_KEY`, `app_owner`, and access to the supporting pin.
 
 ## Contact
